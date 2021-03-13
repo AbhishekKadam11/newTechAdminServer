@@ -1,8 +1,13 @@
 var express = require('express');
 var app = express();
+var bodyParser = require('body-parser')
 var mongoose = require('mongoose');
 var passport = require('passport');
 var config = require('./config/database');
+var routes = require('./routes');
+
+app.use(bodyParser.json());
+app.use('/', routes);
 
 var server_port = process.env.PORT || 8080;
 
@@ -20,7 +25,7 @@ db.once('open', function callback() {
     console.log("mongoose connected");
 });
 
-//CORS middleware
+//CORS middleware 
 var allowCrossDomain = function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
