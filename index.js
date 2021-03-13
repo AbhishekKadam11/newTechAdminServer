@@ -1,13 +1,16 @@
 var express = require('express');
 var app = express();
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
+var serverless = require('serverless-http');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var config = require('./config/database');
 var routes = require('./routes');
 
 app.use(bodyParser.json());
+app.use('/.netlify/functions/server', router);  
 app.use('/', routes);
+serverless(app);
 
 var server_port = process.env.PORT || 8080;
 
