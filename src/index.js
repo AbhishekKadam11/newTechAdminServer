@@ -8,9 +8,8 @@ var config = require('./config/database');
 var routes = require('./routes');
 
 app.use(bodyParser.json());
-app.use('/.netlify/functions/server', router);  
+app.use('/.netlify/functions/index', routes);  
 app.use('/', routes);
-serverless(app);
 
 var server_port = process.env.PORT || 8080;
 
@@ -19,7 +18,7 @@ var server = app.listen(server_port, function() {
   console.log('Listening on port %d', server_port, 'host at:',host);
 });
 
-//----------connect to database-------------------
+//----------connect to database------------------- 
 
 mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
 var db = mongoose.connection;
@@ -37,3 +36,4 @@ var allowCrossDomain = function (req, res, next) {
 };
 app.use(allowCrossDomain);
  
+module.exports.handler = serverless(app);
