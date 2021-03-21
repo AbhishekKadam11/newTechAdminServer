@@ -2,9 +2,14 @@ var mongoose = require('mongoose');
 var ObjectId = require('mongodb').ObjectId;
 var passport = require('passport');
 var jwt = require('jsonwebtoken');
+var async = require('async');
+var moment = require('moment');
 
-var User = require('../models/user');
 var config = require('../config/database');
+var User = require('../models/user');
+var customer = require('../models/customer');
+var products = require('../models/productuploads');
+var orders = require('../models/placeorder');
 
 exports.getMessage = (req, res) => {
     res.status(200).json({ message: 'Connected!' });
@@ -58,4 +63,56 @@ exports.login = async (req, res) => {
             });
         }
     });
+}
+
+exports.dashboardCount = async (req, res) => {
+    async.parallel({
+        totalCustomer: function(callback) {
+        customer.aggregate( [
+            { $group: { _id: null, myCount: { $sum: 1 } } },
+            { $project: { _id: 0 } }
+         ] ).then((result, err)=>{
+             if(Array.isArray(result)) {
+                callback(null, result[0]['myCount']);
+             } else {
+                callback(null, 0);
+             }
+         })
+        },
+        products: function(callback) {
+            products.aggregate( [
+                { $group: { _id: null, myCount: { $sum: 1 } } },
+                { $project: { _id: 0 } }
+             ] ).then((result, err)=>{
+                 if(Array.isArray(result)) {
+                    callback(null, result[0]['myCount']);
+                 } else {
+                    callback(null, 0);
+                 }
+             })
+          },
+          orders: function(callback) {
+            var today = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
+            console.log("day -- " + today)
+            // console.log("Next day -- " + (today.getDate() + 1))
+            var d = moment(today).add(1,'days')
+            // d.setDate(today.getDate() + 1);
+            var tomorrow = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]'); 
+            console.log("tomorrow -- " + tomorrow)
+            orders.aggregate( [
+                { $group: { _id: null, myCount: { $sum: 1 } } },
+                { $project: { _id: 0 } },
+                { $match: {"requestdate": { $gte: new Date(today).toISOString() }}}
+             ] ).then((result, err)=>{
+                 if(Array.isArray(result) && result.length >0) {
+                    callback(null, result);
+                 } else {
+                    callback(null, 0);
+                 }
+             })
+          },
+          
+      }, function(err, results) {
+        res.send(results)
+      });
 }
