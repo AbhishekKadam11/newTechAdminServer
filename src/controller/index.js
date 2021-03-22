@@ -93,19 +93,15 @@ exports.dashboardCount = async (req, res) => {
           },
           orders: function(callback) {
             var today = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
-            console.log("day -- " + today)
-            // console.log("Next day -- " + (today.getDate() + 1))
             var d = moment(today).add(1,'days')
-            // d.setDate(today.getDate() + 1);
             var tomorrow = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]'); 
-            console.log("tomorrow -- " + tomorrow)
-            orders.aggregate( [
-                { $group: { _id: null, myCount: { $sum: 1 } } },
+            orders.aggregate( [ 
                 { $project: { _id: 0 } },
-                { $match: {"requestdate": { $gte: new Date(today).toISOString() }}}
+                { $match: {"requestdate": { $gte: new Date(today), $lte: new Date(tomorrow) }}},
+                { $group: { _id: null, myCount: { $sum: 1 } } }
              ] ).then((result, err)=>{
                  if(Array.isArray(result) && result.length >0) {
-                    callback(null, result);
+                    callback(null, result[0]['myCount']);
                  } else {
                     callback(null, 0);
                  }
