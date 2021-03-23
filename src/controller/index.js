@@ -10,6 +10,7 @@ var User = require('../models/user');
 var customer = require('../models/customer');
 var products = require('../models/productuploads');
 var orders = require('../models/placeorder');
+var customerReview = require('../models/customerreview');
 
 exports.getMessage = (req, res) => {
     res.status(200).json({ message: 'Connected!' });
@@ -98,6 +99,19 @@ exports.dashboardCount = async (req, res) => {
             orders.aggregate( [ 
                 { $project: { _id: 0 } },
                 { $match: {"requestdate": { $gte: new Date(today), $lte: new Date(tomorrow) }}},
+                { $group: { _id: null, myCount: { $sum: 1 } } }
+             ] ).then((result, err)=>{
+                 if(Array.isArray(result) && result.length >0) {
+                    callback(null, result[0]['myCount']);
+                 } else {
+                    callback(null, 0);
+                 }
+             })
+          },
+          maxReview: function(callback) {
+            customerReview.aggregate( [ 
+                { $project: { _id: 0 } },
+                { $match: {"starRate": { $gte: 4 }}},
                 { $group: { _id: null, myCount: { $sum: 1 } } }
              ] ).then((result, err)=>{
                  if(Array.isArray(result) && result.length >0) {
