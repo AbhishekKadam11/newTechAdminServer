@@ -57,7 +57,7 @@ exports.login = async (req, res) => {
                     var token = jwt.sign({ id: user._id }, config.secret, {
                         expiresIn: 86400 // expires in 24 hours
                       });                  
-                    res.send({ success: true, token: token});
+                    res.send({ success: true, token: token, email: req.body.email});
                 } else {
                     res.send({ success: false, msg: 'Authentication failed. Wrong password.' });
                 }
