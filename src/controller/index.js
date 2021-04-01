@@ -18,7 +18,7 @@ exports.getMessage = (req, res) => {
 
 exports.register = async (req, res) => {
     if (!req.body['email'] || !req.body['password']) {
-        res.json({success: false, msg: 'Please enter name and password.'});
+        res.json({ success: false, msg: 'Please enter name and password.' });
     } else {
         var newUser = new User({
             email: req.body['email'],
@@ -32,11 +32,11 @@ exports.register = async (req, res) => {
                 }, function (err, user) {
                     var token = jwt.sign({ id: user._id }, config.secret, {
                         expiresIn: 86400 // expires in 24 hours
-                      });
+                    });
                     res.status(200).json({ success: true, token: token });
                 })
-            } else{
-                res.status(403).json({success: false, msg: 'Unable to create new user.', error: err});
+            } else {
+                res.status(403).json({ success: false, msg: 'Unable to create new user.', error: err });
             }
         });
     }
@@ -56,8 +56,8 @@ exports.login = async (req, res) => {
                     // if user is found and password is right create a token
                     var token = jwt.sign({ id: user._id }, config.secret, {
                         expiresIn: 86400 // expires in 24 hours
-                      });                  
-                    res.send({ success: true, token: token, email: req.body.email});
+                    });
+                    res.send({ success: true, token: token, email: req.body.email });
                 } else {
                     res.send({ success: false, msg: 'Authentication failed. Wrong password.' });
                 }
@@ -68,61 +68,106 @@ exports.login = async (req, res) => {
 
 exports.dashboardCount = async (req, res) => {
     async.parallel({
-        totalCustomer: function(callback) {
-        customer.aggregate( [
-            { $group: { _id: null, myCount: { $sum: 1 } } },
-            { $project: { _id: 0 } }
-         ] ).then((result, err)=>{
-             if(Array.isArray(result)) {
-                callback(null, result[0]['myCount']);
-             } else {
-                callback(null, 0);
-             }
-         })
-        },
-        products: function(callback) {
-            products.aggregate( [
+        totalCustomer: function (callback) {
+            customer.aggregate([
                 { $group: { _id: null, myCount: { $sum: 1 } } },
                 { $project: { _id: 0 } }
-             ] ).then((result, err)=>{
-                 if(Array.isArray(result)) {
+            ]).then((result, err) => {
+                if (Array.isArray(result)) {
                     callback(null, result[0]['myCount']);
-                 } else {
+                } else {
                     callback(null, 0);
-                 }
-             })
-          },
-          orders: function(callback) {
+                }
+            })
+        },
+        products: function (callback) {
+            products.aggregate([
+                { $group: { _id: null, myCount: { $sum: 1 } } },
+                { $project: { _id: 0 } }
+            ]).then((result, err) => {
+                if (Array.isArray(result)) {
+                    callback(null, result[0]['myCount']);
+                } else {
+                    callback(null, 0);
+                }
+            })
+        },
+        orders: function (callback) {
             var today = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
-            var d = moment(today).add(1,'days')
-            var tomorrow = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]'); 
-            orders.aggregate( [ 
+            var d = moment(today).add(1, 'days')
+            var tomorrow = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]');
+            orders.aggregate([
                 { $project: { _id: 0 } },
-                { $match: {"requestdate": { $gte: new Date(today), $lte: new Date(tomorrow) }}},
+                { $match: { "requestdate": { $gte: new Date(today), $lte: new Date(tomorrow) } } },
                 { $group: { _id: null, myCount: { $sum: 1 } } }
-             ] ).then((result, err)=>{
-                 if(Array.isArray(result) && result.length >0) {
+            ]).then((result, err) => {
+                if (Array.isArray(result) && result.length > 0) {
                     callback(null, result[0]['myCount']);
-                 } else {
+                } else {
                     callback(null, 0);
-                 }
-             })
-          },
-          maxReview: function(callback) {
-            customerReview.aggregate( [ 
+                }
+            })
+        },
+        maxReview: function (callback) {
+            customerReview.aggregate([
                 { $project: { _id: 0 } },
-                { $match: {"starRate": { $gte: 4 }}},
+                { $match: { "starRate": { $gte: 4 } } },
                 { $group: { _id: null, myCount: { $sum: 1 } } }
-             ] ).then((result, err)=>{
-                 if(Array.isArray(result) && result.length >0) {
+            ]).then((result, err) => {
+                if (Array.isArray(result) && result.length > 0) {
                     callback(null, result[0]['myCount']);
-                 } else {
+                } else {
                     callback(null, 0);
-                 }
-             })
-          },
-          
-      }, function(err, results) {
+                }
+            })
+        },
+
+    }, function (err, results) {
         res.send(results)
-      });
+    });
+}
+
+exports.orderStatistics = async (req, res) => {
+    var currentMonth = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
+    var d = moment(currentMonth).add(-1, 'month')
+    var previousMonth = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]');
+    var projectQry = [
+        { $project: { _id: 0 } },
+        { $match: { "requestdate": { $gte: new Date(previousMonth), $lte: new Date(currentMonth) } } },
+        { $group: { _id: "$requestdate", myCount: { $sum: 1 } } }
+    ];
+    orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send(err);
+        }
+    })
+}
+
+exports.orderByCustomer = async (req, res) => {
+    var currentDay = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
+    var d = moment(currentDay).add(-7, 'days');
+    var previousDay = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]');
+    var projectQry = [
+        { $project: { _id: 0 } },
+        { $match: { "requestdate": { $gte: new Date(previousDay), $lte: new Date(currentDay) } } },
+        { $addFields: { "userId": {$substr: ["$_id", 0, 10]}}},
+        {
+            $lookup:
+              {
+                from: "customer",
+                localField: "customerId",
+                foreignField: "userId",
+                as: "customerDetails"
+              }
+         }
+    ];
+    orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
 }
