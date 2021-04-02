@@ -7,5 +7,6 @@ router.post('/login', controller.login);
 router.get('/dashboardCount', controller.dashboardCount);
 router.get('/orderStatistics', controller.orderStatistics);
 router.get('/orderByCustomer', controller.orderByCustomer);
+router.get('/productDetails', controller.productDetails);
 
 module.exports = router;

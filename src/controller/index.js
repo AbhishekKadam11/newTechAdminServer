@@ -4,6 +4,7 @@ var passport = require('passport');
 var jwt = require('jsonwebtoken');
 var async = require('async');
 var moment = require('moment');
+var ObjectId = mongoose.Types.ObjectId;
 
 var config = require('../config/database');
 var User = require('../models/user');
@@ -152,18 +153,34 @@ exports.orderByCustomer = async (req, res) => {
     var projectQry = [
         { $project: { _id: 0 } },
         { $match: { "requestdate": { $gte: new Date(previousDay), $lte: new Date(currentDay) } } },
-        { $addFields: { "userId": {$substr: ["$_id", 0, 10]}}},
+        { $addFields: { "userId": { "$toObjectId": "$customerId" } } },
         {
             $lookup:
-              {
-                from: "customer",
-                localField: "customerId",
-                foreignField: "userId",
+            {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
                 as: "customerDetails"
-              }
-         }
+            }
+        },
+        { $unwind: { "path": "$customerDetails", "preserveNullAndEmptyArrays": true } },
+        { $project: { customerDetails: { password: 0 } } },
     ];
     orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.productDetails = async (req, res) => {
+    var productId = req.query.productId;
+    var projectQry = [
+        { $match: { "_id": ObjectId(productId) } },
+    ];
+    products.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
             res.status(200).send(result);
         } else {
