@@ -5,21 +5,18 @@ var bcrypt = require('bcryptjs');
 
 // set up a mongoose model
 var UserSchema = new Schema({
-  // _id: {
-  //       type: String
-  //   },
   email: {
-        type: String,
-        unique: true,
-        required: true
-    },
+    type: String,
+    unique: true,
+    required: true
+  },
   password: {
-        type: String,
-        required: true
-    },
+    type: String,
+    required: true
+  },
   profilename: {
-        type: String
-    },
+    type: String
+  },
   profilePic: {
     type: String
   },
@@ -50,37 +47,39 @@ var UserSchema = new Schema({
   extraaddon: {
     type: Object
   }
-},{ versionKey: false
+}, {
+  versionKey: false,
+  timestamps: true
 });
 
 
 UserSchema.pre('save', function (next) {
-    var user = this;
-    if (this.isModified('password') || this.isNew) {
-        bcrypt.genSalt(10, function (err, salt) {
-            if (err) {
-                return next(err);
-            }
-            bcrypt.hash(user.password, salt, function (err, hash) {
-                if (err) {
-                    return next(err);
-                }
-                user.password = hash;
-                next();
-            });
-        });
-    } else {
-        return next();
-    }
+  var user = this;
+  if (this.isModified('password') || this.isNew) {
+    bcrypt.genSalt(10, function (err, salt) {
+      if (err) {
+        return next(err);
+      }
+      bcrypt.hash(user.password, salt, function (err, hash) {
+        if (err) {
+          return next(err);
+        }
+        user.password = hash;
+        next();
+      });
+    });
+  } else {
+    return next();
+  }
 });
 
 UserSchema.methods.comparePassword = function (passw, cb) {
-    bcrypt.compare(passw, this.password, function (err, isMatch) {
-        if (err) {
-            return cb(err);
-        }
-        cb(null, isMatch);
-    });
+  bcrypt.compare(passw, this.password, function (err, isMatch) {
+    if (err) {
+      return cb(err);
+    }
+    cb(null, isMatch);
+  });
 };
 
 UserSchema.methods.newPassword = function (newpass, next) {
@@ -99,5 +98,5 @@ UserSchema.methods.newPassword = function (newpass, next) {
   });
 };
 
-module.exports = mongoose.model('customer', UserSchema,'users');
+module.exports = mongoose.model('customer', UserSchema, 'users');
 

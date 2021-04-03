@@ -245,9 +245,18 @@ exports.categoryList = async (req, res) => {
 }
 
 exports.productList = async (req, res) => {
+    var page = req.query.page || 0;
+    var limit = req.query.limit || 10;
+    var skip = page*limit;
     let projectQry = [
         { $project: { _id: 1, "title": 1, "brand": 1, "category": 1, "modalno": 1, "price": 1, "image": 1, "createdAt": 1 } },
         { $sort: { "createdAt": -1 } },
+        {
+            $facet: {
+                metadata: [{ $count: "total" }, { $addFields: { page: parseInt(page) } }],
+                data: [{ $skip: parseInt(skip) }, { $limit: parseInt(limit) }] // add projection here wish you re-shape the docs
+            }
+        }
     ];
     if (req.query.title) {
         projectQry.push({ $match: { "title": { $regex: req.query.title, $options: 'g' } } });
@@ -265,6 +274,39 @@ exports.productList = async (req, res) => {
         projectQry.push({ $match: { "createdAt": { $regex: req.query.createdAt, $options: 'g' } } });
     }
     products.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.customerList = async (req, res) => {
+    var page = req.query.page || 0;
+    var limit = req.query.limit || 10;
+    var skip = page*limit;
+    let projectQry = [
+        { $project: { _id: 1, "profilename": 1, "profilePic": 1, "mobileNo": 1, "city_id": 1, "state_id": 1, "createdAt": 1 } },
+        { $sort: { "createdAt": -1 } },
+        {
+            $facet: {
+                metadata: [{ $count: "total" }, { $addFields: { page: parseInt(page) } }],
+                data: [{ $skip: parseInt(skip) }, { $limit: parseInt(limit) }] // add projection here wish you re-shape the docs
+            }
+        }
+    ];
+    if (req.query.profilename) {
+        projectQry.push({ $match: { "profilename": { $regex: req.query.profilename, $options: 'g' } } });
+    }
+    if (req.query.mobileNo) {
+        projectQry.push({ $match: { "mobileNo": { $regex: req.query.mobileNo, $options: 'g' } } });
+    }
+    if (req.query.createdAt) {
+        projectQry.push({ $match: { "createdAt": { $regex: req.query.createdAt, $options: 'g' } } });
+    }
+   
+    customer.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
             res.status(200).send(result);
         } else {
