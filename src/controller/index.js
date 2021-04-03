@@ -5,6 +5,7 @@ var jwt = require('jsonwebtoken');
 var async = require('async');
 var moment = require('moment');
 var ObjectId = mongoose.Types.ObjectId;
+var async = require("async");
 
 var config = require('../config/database');
 var User = require('../models/user');
@@ -12,6 +13,8 @@ var customer = require('../models/customer');
 var products = require('../models/productuploads');
 var orders = require('../models/placeorder');
 var customerReview = require('../models/customerreview');
+var categorytype = require('../models/category');
+var brands = require('../models/brands');
 
 exports.getMessage = (req, res) => {
     res.status(200).json({ message: 'Connected!' });
@@ -180,6 +183,87 @@ exports.productDetails = async (req, res) => {
     var projectQry = [
         { $match: { "_id": ObjectId(productId) } },
     ];
+    products.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.productCategories = async (req, res) => {
+    var data = {};
+    async.parallel({
+        categoryList: function (callback) {
+            let projectQry = [
+                { $sort: { "name": 1 } }];
+            category.aggregate(projectQry).then((result, err) => {
+                if (Array.isArray(result) && result.length > 0) {
+                    data['category'] = result.map(item => ({
+                        text: item.name,
+                        id: item._id
+                    }));
+                    callback(null, data['category']);
+                } else {
+                    callback(null, err);
+                    console.log(err)
+                }
+            })
+        },
+        brandList: function (callback) {
+            let projectQry = [
+                { $sort: { "name": 1 } }];
+            brands.aggregate(projectQry).then((result, err) => {
+                if (Array.isArray(result) && result.length > 0) {
+                    data['brand'] = result.map(item => ({
+                        text: item.name,
+                        id: item._id
+                    }));
+                    callback(null, data['brand']);
+                } else {
+                    callback(null, err);
+                    console.log(err)
+                }
+            })
+        }
+    }, function (err, results) {
+        res.send(results);
+    });
+}
+
+exports.categoryList = async (req, res) => {
+    let projectQry = [
+        { $sort: { "name": 1 } }];
+    categorytype.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.productList = async (req, res) => {
+    let projectQry = [
+        { $project: { _id: 1, "title": 1, "brand": 1, "category": 1, "modalno": 1, "price": 1, "image": 1, "createdAt": 1 } },
+        { $sort: { "createdAt": -1 } },
+    ];
+    if (req.query.title) {
+        projectQry.push({ $match: { "title": { $regex: req.query.title, $options: 'g' } } });
+    }
+    if (req.query.brand) {
+        projectQry.push({ $match: { "brand": { $regex: req.query.brand, $options: 'g' } } });
+    }
+    if (req.query.category) {
+        projectQry.push({ $match: { "category": { $regex: req.query.category, $options: 'g' } } });
+    }
+    if (req.query.price) {
+        projectQry.push({ $match: { "price": { $regex: req.query.price, $options: 'g' } } });
+    }
+    if (req.query.createdAt) {
+        projectQry.push({ $match: { "createdAt": { $regex: req.query.createdAt, $options: 'g' } } });
+    }
     products.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
             res.status(200).send(result);

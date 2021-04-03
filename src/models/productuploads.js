@@ -41,6 +41,8 @@
      fulldescription: {
          type: Array
      }
- });
+ },{
+    timestamps:true
+});
  
  module.exports = mongoose.model('productuploads', ProductSchema);
