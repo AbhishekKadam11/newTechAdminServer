@@ -287,7 +287,7 @@ exports.customerList = async (req, res) => {
     var limit = req.query.limit || 10;
     var skip = page*limit;
     let projectQry = [
-        { $project: { _id: 1, "profilename": 1, "profilePic": 1, "mobileNo": 1, "city_id": 1, "state_id": 1, "createdAt": 1 } },
+        { $project: { _id: 1,  "email": 1, "profilename": 1, "profilePic": 1, "mobileNo": 1, "city_id": 1, "state_id": 1, "createdAt": 1 } },
         { $sort: { "createdAt": -1 } },
         {
             $facet: {
