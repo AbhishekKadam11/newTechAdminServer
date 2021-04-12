@@ -198,7 +198,7 @@ exports.productCategories = async (req, res) => {
         categoryList: function (callback) {
             let projectQry = [
                 { $sort: { "name": 1 } }];
-            category.aggregate(projectQry).then((result, err) => {
+                categorytype.aggregate(projectQry).then((result, err) => {
                 if (Array.isArray(result) && result.length > 0) {
                     data['category'] = result.map(item => ({
                         text: item.name,
