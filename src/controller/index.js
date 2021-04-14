@@ -6,6 +6,12 @@ var async = require('async');
 var moment = require('moment');
 var ObjectId = mongoose.Types.ObjectId;
 var async = require("async");
+const fs  = require('fs');
+const multer = require('multer');
+const Gridfs = require('multer-gridfs-storage');
+const bodyparser = require('body-parser');
+const Grid = require('gridfs-stream');
+const crypto = require('crypto');
 
 var config = require('../config/database');
 var User = require('../models/user');
@@ -313,4 +319,44 @@ exports.customerList = async (req, res) => {
             res.status(400).send("No data found");
         }
     })
+}
+
+exports.customerDetails = async (req, res) => {
+    var customerId = req.query.customerId;
+    var projectQry = [
+        { $match: { "_id": ObjectId(customerId) } },
+    ];
+    customer.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+//create file storage
+const storage = new Gridfs({
+    url: config.database,
+    file: (req, file) => {
+        return new Promise((resolve, reject) => {
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) {
+                    return reject(err);
+                }
+                //const filename = buf.toString('hex') + path.extname(file.originalname);
+                const filename = file.originalname;
+                const fileinfo = {
+                    filename: filename
+                };
+                resolve(fileinfo);
+            });
+        });
+    }
+});
+exports.multerUpload = multer({ storage });
+
+exports.uploads = async (req, res) => {
+   // console.log(req.file.originalname); 
+    res.json({ "file": req.file.originalname });
 }

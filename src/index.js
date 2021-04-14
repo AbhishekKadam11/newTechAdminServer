@@ -6,6 +6,10 @@ var mongoose = require('mongoose');
 var passport = require('passport');
 var config = require('./config/database');
 var routes = require('./routes');
+const multer = require('multer');
+const Gridfs = require('multer-gridfs-storage');
+const bodyparser = require('body-parser');
+const Grid = require('gridfs-stream');
 
 app.use(bodyParser.json());
 app.use('/.netlify/functions/index', routes);  
@@ -18,12 +22,15 @@ var server = app.listen(server_port, function() {
   console.log('Listening on port %d', server_port, 'host at:',host);
 });
 
+//gridfs variable
+let gfs;
 //----------connect to database------------------- 
 
 mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback() {
+  gfs = Grid(db.db,mongoose.mongo);
     console.log("mongoose connected");
 });
 
