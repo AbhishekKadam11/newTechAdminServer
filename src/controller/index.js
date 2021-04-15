@@ -344,10 +344,9 @@ const storage = new Gridfs({
                 if (err) {
                     return reject(err);
                 }
-                //const filename = buf.toString('hex') + path.extname(file.originalname);
                 const filename = file.originalname;
                 const fileinfo = {
-                    filename: filename
+                    filename: filename,
                 };
                 resolve(fileinfo);
             });
@@ -357,6 +356,19 @@ const storage = new Gridfs({
 exports.multerUpload = multer({ storage });
 
 exports.uploads = async (req, res) => {
-   // console.log(req.file.originalname); 
-    res.json({ "file": req.file.originalname });
+    res.json({ "fileId": req.file.id });
+}
+
+exports.productUpload = async (req, res) => {
+    var payload = req.body;
+    var productDetails = new products(payload);
+    if (payload) {
+        productDetails.save().then(result => {
+            res.status(200).send("Data saved successfully");
+        }).catch(error => {
+            res.status(400).send(error);
+        })
+    } else {
+        res.status(400).send("Please provide payload");
+    }
 }
