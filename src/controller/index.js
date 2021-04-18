@@ -6,12 +6,13 @@ var async = require('async');
 var moment = require('moment');
 var ObjectId = mongoose.Types.ObjectId;
 var async = require("async");
-const fs  = require('fs');
+const fs = require('fs');
 const multer = require('multer');
 const Gridfs = require('multer-gridfs-storage');
 const bodyparser = require('body-parser');
 const Grid = require('gridfs-stream');
 const crypto = require('crypto');
+// const main = require('../index.js')
 
 var config = require('../config/database');
 var User = require('../models/user');
@@ -21,6 +22,15 @@ var orders = require('../models/placeorder');
 var customerReview = require('../models/customerreview');
 var categorytype = require('../models/category');
 var brands = require('../models/brands');
+
+var gfs;
+mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function callback() {
+  gfs = Grid(db.db,mongoose.mongo);
+    console.log("mongoose connected");
+});
 
 exports.getMessage = (req, res) => {
     res.status(200).json({ message: 'Connected!' });
@@ -204,7 +214,7 @@ exports.productCategories = async (req, res) => {
         categoryList: function (callback) {
             let projectQry = [
                 { $sort: { "name": 1 } }];
-                categorytype.aggregate(projectQry).then((result, err) => {
+            categorytype.aggregate(projectQry).then((result, err) => {
                 if (Array.isArray(result) && result.length > 0) {
                     data['category'] = result.map(item => ({
                         text: item.name,
@@ -253,7 +263,7 @@ exports.categoryList = async (req, res) => {
 exports.productList = async (req, res) => {
     var page = req.query.page || 0;
     var limit = req.query.limit || 10;
-    var skip = page*limit;
+    var skip = page * limit;
     let projectQry = [
         { $project: { _id: 1, "title": 1, "brand": 1, "category": 1, "modalno": 1, "price": 1, "image": 1, "createdAt": 1 } },
         { $sort: { "createdAt": -1 } },
@@ -291,9 +301,9 @@ exports.productList = async (req, res) => {
 exports.customerList = async (req, res) => {
     var page = req.query.page || 0;
     var limit = req.query.limit || 10;
-    var skip = page*limit;
+    var skip = page * limit;
     let projectQry = [
-        { $project: { _id: 1,  "email": 1, "profilename": 1, "profilePic": 1, "mobileNo": 1, "city_id": 1, "state_id": 1, "createdAt": 1 } },
+        { $project: { _id: 1, "email": 1, "profilename": 1, "profilePic": 1, "mobileNo": 1, "city_id": 1, "state_id": 1, "createdAt": 1 } },
         { $sort: { "createdAt": -1 } },
         {
             $facet: {
@@ -311,7 +321,7 @@ exports.customerList = async (req, res) => {
     if (req.query.createdAt) {
         projectQry.push({ $match: { "createdAt": { $regex: req.query.createdAt, $options: 'g' } } });
     }
-   
+
     customer.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
             res.status(200).send(result);
@@ -353,16 +363,18 @@ const storage = new Gridfs({
         });
     }
 });
-exports.multerUpload = multer({ storage });
+exports.multerUpload = multer({ storage, limits: { fieldSize: 25 * 1024 * 1024 } });
 
 exports.uploads = async (req, res) => {
-    res.json({ "fileId": req.file.id });
+    res.json({ "fileId": req.file.originalname });
 }
 
 exports.productUpload = async (req, res) => {
     var payload = req.body;
     var productDetails = new products(payload);
     if (payload) {
+        payload.shortdescription = [payload.shortdescription];
+        payload.fulldescription = [payload.fulldescription];
         productDetails.save().then(result => {
             res.status(200).send("Data saved successfully");
         }).catch(error => {
@@ -372,3 +384,30 @@ exports.productUpload = async (req, res) => {
         res.status(400).send("Please provide payload");
     }
 }
+
+
+/* 
+    GET: Fetches a particular image and render on browser
+*/
+exports.getFile = async (req, res) => {
+    gfs.files.find({ filename: req.query.filename }).toArray((err, files) => {
+        if (!files[0] || files.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No files available',
+            });
+        }
+
+        if (files[0].contentType === 'image/jpeg' || files[0].contentType === 'image/png' || files[0].contentType === 'image/svg+xml'
+            || files[0].contentType === 'binary/octet-stream') {
+            // render image to browser
+            gfs.createReadStream(req.query.filename).pipe(res);
+        } else {
+            res.status(404).json({
+                error: 'Not an image',
+            });
+        }
+    });
+}
+
+

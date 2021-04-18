@@ -23,16 +23,16 @@ var server = app.listen(server_port, function() {
 });
 
 //gridfs variable
-let gfs;
+// var gfs;
 //----------connect to database------------------- 
 
-mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function callback() {
-  gfs = Grid(db.db,mongoose.mongo);
-    console.log("mongoose connected");
-});
+// mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
+// var db = mongoose.connection;
+// db.on('error', console.error.bind(console, 'connection error:'));
+// db.once('open', function callback() {
+//   gfs = Grid(db.db,mongoose.mongo);
+//     console.log("mongoose connected");
+// });
 
 //CORS middleware 
 var allowCrossDomain = function (req, res, next) {
@@ -44,3 +44,4 @@ var allowCrossDomain = function (req, res, next) {
 app.use(allowCrossDomain);
  
 module.exports.handler = serverless(app);
+// module.exports.gfs = gfs;
