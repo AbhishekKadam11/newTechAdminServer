@@ -381,7 +381,7 @@ exports.productUpload = async (req, res) => {
             res.status(400).send(error);
         })
     } else {
-        res.status(400).send("Please provide payload");
+        res.status(400).send("Please provide payload"); 
     }
 }
 
@@ -390,22 +390,12 @@ exports.productUpload = async (req, res) => {
     GET: Fetches a particular image and render on browser
 */
 exports.getFile = async (req, res) => {
-    gfs.files.find({ filename: req.query.filename }).toArray((err, files) => {
-        if (!files[0] || files.length === 0) {
-            return res.status(200).json({
-                success: false,
-                message: 'No files available',
-            });
-        }
-
-        if (files[0].contentType === 'image/jpeg' || files[0].contentType === 'image/png' || files[0].contentType === 'image/svg+xml'
-            || files[0].contentType === 'binary/octet-stream') {
-            // render image to browser
-            gfs.createReadStream(req.query.filename).pipe(res);
+    // console.log(gfs)
+    gfs.exist({ filename: req.query.filename }, function (err, file) {
+        if (err || !file) {
+            res.send('File Not Found');
         } else {
-            res.status(404).json({
-                error: 'Not an image',
-            });
+            gfs.createReadStream(req.query.filename).pipe(res);
         }
     });
 }
