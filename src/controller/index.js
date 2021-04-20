@@ -198,6 +198,17 @@ exports.productDetails = async (req, res) => {
     var productId = req.query.productId;
     var projectQry = [
         { $match: { "_id": ObjectId(productId) } },
+      
+        {
+            $lookup:
+            {
+                from: "orderrequests",
+                localField: "_id",
+                foreignField: "orderData.productId",
+                as: "orderDetails"
+            }
+        },
+        { $unwind: { "path": "$orderDetails", "preserveNullAndEmptyArrays": true } },
     ];
     products.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
@@ -376,15 +387,15 @@ exports.productUpload = async (req, res) => {
         payload.shortdescription = [payload.shortdescription];
         payload.fulldescription = [payload.fulldescription];
         productDetails.save().then(result => {
-            res.status(200).send("Data saved successfully");
+            // console.log(result)
+            res.status(200).send({"message":"Data saved successfully"});
         }).catch(error => {
             res.status(400).send(error);
         })
     } else {
-        res.status(400).send("Please provide payload"); 
+        res.status(400).send({"message":"Please provide payload"}); 
     }
 }
-
 
 /* 
     GET: Fetches a particular image and render on browser
@@ -401,3 +412,28 @@ exports.getFile = async (req, res) => {
 }
 
 
+exports.customerbuyProduct = async (req, res) => {
+    var productId = req.query.productId;
+    var projectQry = [
+        { $match: { "orderData.productId": (productId) } },
+        { $unwind: { "path": "$orderData", "preserveNullAndEmptyArrays": true } },
+        { $addFields: { "productId": { "$toObjectId": "$orderData.productId" } } },
+        {
+            $lookup:
+            {
+                from: "productuploads",
+                localField: "productId",
+                foreignField: "_id",
+                as: "productDetails"
+            }
+        },
+        { $unwind: { "path": "$productDetails", "preserveNullAndEmptyArrays": true } },
+    ];
+    orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}

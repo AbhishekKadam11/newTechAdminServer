@@ -16,5 +16,6 @@ router.get('/customerDetails', controller.customerDetails);
 router.post('/uploads', controller.multerUpload.single('file'), controller.uploads);
 router.post('/productUpload', controller.productUpload);
 router.get('/getFile', controller.getFile);
+router.get('/customerbuyProduct', controller.customerbuyProduct);
 
 module.exports = router;
