@@ -24,11 +24,11 @@ var categorytype = require('../models/category');
 var brands = require('../models/brands');
 
 var gfs;
-mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback() {
-  gfs = Grid(db.db,mongoose.mongo);
+    gfs = Grid(db.db, mongoose.mongo);
     console.log("mongoose connected");
 });
 
@@ -198,17 +198,17 @@ exports.productDetails = async (req, res) => {
     var productId = req.query.productId;
     var projectQry = [
         { $match: { "_id": ObjectId(productId) } },
-      
         {
             $lookup:
             {
                 from: "orderrequests",
-                localField: "_id",
-                foreignField: "orderData.productId",
+                pipeline: [
+                    { $match: { "orderData.productId": productId } }
+                ],
                 as: "orderDetails"
             }
         },
-        { $unwind: { "path": "$orderDetails", "preserveNullAndEmptyArrays": true } },
+        // { $unwind: { "path": "$orderDetails", "preserveNullAndEmptyArrays": true } },
     ];
     products.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
@@ -388,12 +388,12 @@ exports.productUpload = async (req, res) => {
         payload.fulldescription = [payload.fulldescription];
         productDetails.save().then(result => {
             // console.log(result)
-            res.status(200).send({"message":"Data saved successfully"});
+            res.status(200).send({ "message": "Data saved successfully" });
         }).catch(error => {
             res.status(400).send(error);
         })
     } else {
-        res.status(400).send({"message":"Please provide payload"}); 
+        res.status(400).send({ "message": "Please provide payload" });
     }
 }
 
