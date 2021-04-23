@@ -4,7 +4,6 @@ var passport = require('passport');
 var jwt = require('jsonwebtoken');
 var async = require('async');
 var moment = require('moment');
-var ObjectId = mongoose.Types.ObjectId;
 var async = require("async");
 const fs = require('fs');
 const multer = require('multer');
@@ -208,7 +207,40 @@ exports.productDetails = async (req, res) => {
                 as: "orderDetails"
             }
         },
-        // { $unwind: { "path": "$orderDetails", "preserveNullAndEmptyArrays": true } },
+        { $unwind: { "path": "$orderDetails", "preserveNullAndEmptyArrays": true } },
+        { $addFields: { "customerId": { "$toObjectId": "$orderDetails.customerId" } } },
+        {
+            $lookup:
+            {
+                from: "users",
+                localField: "customerId",
+                foreignField: "_id",
+                as: "customerDetails"
+            }
+        },
+        { $unwind: { "path": "$customerDetails", "preserveNullAndEmptyArrays": true } },
+        { $project: { "customerDetails.password": 0, "orderDetails._class": 0, "customerDetails._class": 0, "customerDetails._id": 0 } },
+        {
+            $addFields: {
+                "orderDetails.customerDetails": { "$mergeObjects": ["$orderDetails", "$customerDetails"] }
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                title: {$first: "$title"},
+                brand: {$first: "$brand"},
+                brand: {$first: "$brand"},
+                modalno: {$first: "$modalno"},
+                price: {$first: "$price"},
+                image: {$first: "$image"},
+                fulldescription: {$first: "$fulldescription"},
+                shortdescription: {$first: "$shortdescription"},
+                productimages: {$first: "$productimages"},
+                arrivaldate: {$first: "$arrivaldate"},
+                orderDetails: {$push: "$orderDetails"}
+            }
+        },
     ];
     products.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
