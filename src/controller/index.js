@@ -221,13 +221,12 @@ exports.productDetails = async (req, res) => {
         { $unwind: { "path": "$customerDetails", "preserveNullAndEmptyArrays": true } },
         {
             $project: {
-                "customerDetails.password": 0, "orderDetails._class": 0, "customerDetails._class": 0, "customerDetails._id": 0,
-                // "fulldescription": { $arrayElemAt: ["$fulldescription", 0] }, "shortdescription": { $arrayElemAt: ["$shortdescription", 0] }
+                "customerDetails.password": 0, "orderDetails._class": 0, "customerDetails._class": 0,
             } 
         },
         {
             $addFields: {
-                "orderDetails.customerDetails": { "$mergeObjects": ["$orderDetails", "$customerDetails"] }
+                "orderDetails.customerDetails": "$customerDetails"
             }
         },
         {
@@ -244,7 +243,7 @@ exports.productDetails = async (req, res) => {
                 shortdescription: { $first:{ $arrayElemAt: ["$shortdescription", 0] } },
                 productimages: { $first: "$productimages" },
                 arrivaldate: { $first: "$arrivaldate" },
-                orderDetails: { $push: "$orderDetails" }
+                orderDetails: { $push: "$orderDetails" },
             }
         },
     ];
@@ -468,6 +467,36 @@ exports.customerbuyProduct = async (req, res) => {
         { $unwind: { "path": "$productDetails", "preserveNullAndEmptyArrays": true } },
     ];
     orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.productReview = async (req, res) => {
+    var productId = req.query.productId;
+    var projectQry = [
+        { $match: { "productId": (productId) } },
+        { $addFields: { "customerId": { "$toObjectId": "$customerId" } } },
+        {
+            $lookup:
+            {
+                from: "users",
+                localField: "customerId",
+                foreignField: "_id",
+                as: "customerDetails"
+            }
+        },
+        {
+            $project: {
+                "customerDetails.password": 0, "_class": 0, "productId": 0, "customerDetails._class": 0
+            }
+        },
+
+    ];
+    customerReview.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
             res.status(200).send(result);
         } else {
