@@ -219,7 +219,12 @@ exports.productDetails = async (req, res) => {
             }
         },
         { $unwind: { "path": "$customerDetails", "preserveNullAndEmptyArrays": true } },
-        { $project: { "customerDetails.password": 0, "orderDetails._class": 0, "customerDetails._class": 0, "customerDetails._id": 0 } },
+        {
+            $project: {
+                "customerDetails.password": 0, "orderDetails._class": 0, "customerDetails._class": 0, "customerDetails._id": 0,
+                // "fulldescription": { $arrayElemAt: ["$fulldescription", 0] }, "shortdescription": { $arrayElemAt: ["$shortdescription", 0] }
+            } 
+        },
         {
             $addFields: {
                 "orderDetails.customerDetails": { "$mergeObjects": ["$orderDetails", "$customerDetails"] }
@@ -228,23 +233,24 @@ exports.productDetails = async (req, res) => {
         {
             $group: {
                 _id: '$_id',
-                title: {$first: "$title"},
-                brand: {$first: "$brand"},
-                brand: {$first: "$brand"},
-                modalno: {$first: "$modalno"},
-                price: {$first: "$price"},
-                image: {$first: "$image"},
-                fulldescription: {$first: "$fulldescription"},
-                shortdescription: {$first: "$shortdescription"},
-                productimages: {$first: "$productimages"},
-                arrivaldate: {$first: "$arrivaldate"},
-                orderDetails: {$push: "$orderDetails"}
+                title: { $first: "$title" },
+                brand: { $first: "$brand" },
+                brand: { $first: "$brand" },
+                category: { $first: "$category" },
+                modalno: { $first: "$modalno" },
+                price: { $first: "$price" },
+                image: { $first: "$image" },
+                fulldescription: { $first: { $arrayElemAt: ["$fulldescription", 0] } },
+                shortdescription: { $first:{ $arrayElemAt: ["$shortdescription", 0] } },
+                productimages: { $first: "$productimages" },
+                arrivaldate: { $first: "$arrivaldate" },
+                orderDetails: { $push: "$orderDetails" }
             }
         },
     ];
     products.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
-            res.status(200).send(result);
+            res.status(200).send(result[0]);
         } else {
             res.status(400).send("No data found");
         }
