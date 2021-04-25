@@ -504,3 +504,20 @@ exports.productReview = async (req, res) => {
         }
     })
 }
+
+exports.productUpdate = async (req, res) => {
+    var payload = req.body;
+    if (payload && req.query.productId) {
+        payload.shortdescription = [payload.shortdescription];
+        payload.fulldescription = [payload.fulldescription];
+        products.updateOne({ "_id": req.query.productId }, { $set: payload }, (err, result) => {
+            console.log(result)
+            if(err) {
+                res.status(400).send({ "error": err });
+            }
+            res.status(200).send({ "message": "Data saved successfully" });
+        })
+    } else {
+        res.status(400).send({ "message": "Please provide payload" });
+    }
+}

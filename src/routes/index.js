@@ -18,5 +18,6 @@ router.post('/productUpload', controller.productUpload);
 router.get('/getFile', controller.getFile);
 router.get('/customerbuyProduct', controller.customerbuyProduct);
 router.get('/productReview', controller.productReview);
+router.put('/productUpdate', controller.productUpdate);
 
 module.exports = router;
