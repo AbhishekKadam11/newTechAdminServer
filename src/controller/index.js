@@ -489,12 +489,12 @@ exports.productReview = async (req, res) => {
                 as: "customerDetails"
             }
         },
+        { $unwind: { "path": "$customerDetails", "preserveNullAndEmptyArrays": true } },
         {
             $project: {
                 "customerDetails.password": 0, "_class": 0, "productId": 0, "customerDetails._class": 0
             }
         },
-
     ];
     customerReview.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
