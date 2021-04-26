@@ -386,7 +386,7 @@ exports.customerDetails = async (req, res) => {
     ];
     customer.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
-            res.status(200).send(result);
+            res.status(200).send(result[0]);
         } else {
             res.status(400).send("No data found");
         }
@@ -511,7 +511,6 @@ exports.productUpdate = async (req, res) => {
         payload.shortdescription = [payload.shortdescription];
         payload.fulldescription = [payload.fulldescription];
         products.updateOne({ "_id": req.query.productId }, { $set: payload }, (err, result) => {
-            console.log(result)
             if(err) {
                 res.status(400).send({ "error": err });
             }
