@@ -19,5 +19,7 @@ router.get('/getFile', controller.getFile);
 router.get('/customerbuyProduct', controller.customerbuyProduct);
 router.get('/productReview', controller.productReview);
 router.put('/productUpdate', controller.productUpdate);
+router.put('/customerUpdate', controller.customerUpdate);
+router.get('/orderCountByCustomer', controller.orderCountByCustomer);
 
 module.exports = router;

@@ -520,3 +520,49 @@ exports.productUpdate = async (req, res) => {
         res.status(400).send({ "message": "Please provide payload" });
     }
 }
+
+exports.customerUpdate = async (req, res) => {
+    var payload = req.body;
+    if (payload && req.query.customerId) {
+        customer.updateOne({ "_id": req.query.customerId }, { $set: payload }, (err, result) => {
+            if(err) {
+                res.status(400).send({ "error": err });
+            }
+            res.status(200).send({ "message": "Data saved successfully" });
+        })
+    } else {
+        res.status(400).send({ "message": "Please provide payload" });
+    }
+}
+
+exports.orderCountByCustomer = async (req, res) => {
+    var currentDay = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
+    var d = moment(currentDay).add(-7, 'days');
+    var previousDay = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]');
+    var projectQry = [
+        { $project: { _id: 0 } },
+        // { $match: { "requestdate": { $gte: new Date(previousDay), $lte: new Date(currentDay) } } },
+        { $addFields: { "productId":  "$orderData.productId"  } },
+        { $unwind: { "path": "$productId", "preserveNullAndEmptyArrays": true } },
+        { $addFields: { "productId": { "$toObjectId": "$productId" } } },
+        {
+            $lookup:
+            {
+                from: "productuploads",
+                localField: "productId",
+                foreignField: "_id",
+                as: "productDetails"
+            }
+        },
+        { $unwind: { "path": "$productDetails", "preserveNullAndEmptyArrays": true } },
+        { $project: { productDetails: { category: 1, } } },
+        { $group: { _id: "$productDetails.category", myCount: { $sum: 1 } } }
+    ];
+    orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
