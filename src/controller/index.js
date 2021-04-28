@@ -222,7 +222,7 @@ exports.productDetails = async (req, res) => {
         {
             $project: {
                 "customerDetails.password": 0, "orderDetails._class": 0, "customerDetails._class": 0,
-            } 
+            }
         },
         {
             $addFields: {
@@ -240,7 +240,7 @@ exports.productDetails = async (req, res) => {
                 price: { $first: "$price" },
                 image: { $first: "$image" },
                 fulldescription: { $first: { $arrayElemAt: ["$fulldescription", 0] } },
-                shortdescription: { $first:{ $arrayElemAt: ["$shortdescription", 0] } },
+                shortdescription: { $first: { $arrayElemAt: ["$shortdescription", 0] } },
                 productimages: { $first: "$productimages" },
                 arrivaldate: { $first: "$arrivaldate" },
                 orderDetails: { $push: "$orderDetails" },
@@ -511,7 +511,7 @@ exports.productUpdate = async (req, res) => {
         payload.shortdescription = [payload.shortdescription];
         payload.fulldescription = [payload.fulldescription];
         products.updateOne({ "_id": req.query.productId }, { $set: payload }, (err, result) => {
-            if(err) {
+            if (err) {
                 res.status(400).send({ "error": err });
             }
             res.status(200).send({ "message": "Data saved successfully" });
@@ -525,7 +525,7 @@ exports.customerUpdate = async (req, res) => {
     var payload = req.body;
     if (payload && req.query.customerId) {
         customer.updateOne({ "_id": req.query.customerId }, { $set: payload }, (err, result) => {
-            if(err) {
+            if (err) {
                 res.status(400).send({ "error": err });
             }
             res.status(200).send({ "message": "Data saved successfully" });
@@ -536,13 +536,10 @@ exports.customerUpdate = async (req, res) => {
 }
 
 exports.orderCountByCustomer = async (req, res) => {
-    var currentDay = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
-    var d = moment(currentDay).add(-7, 'days');
-    var previousDay = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]');
     var projectQry = [
         { $project: { _id: 0 } },
         // { $match: { "requestdate": { $gte: new Date(previousDay), $lte: new Date(currentDay) } } },
-        { $addFields: { "productId":  "$orderData.productId"  } },
+        { $addFields: { "productId": "$orderData.productId" } },
         { $unwind: { "path": "$productId", "preserveNullAndEmptyArrays": true } },
         { $addFields: { "productId": { "$toObjectId": "$productId" } } },
         {
@@ -558,6 +555,92 @@ exports.orderCountByCustomer = async (req, res) => {
         { $project: { productDetails: { category: 1, } } },
         { $group: { _id: "$productDetails.category", myCount: { $sum: 1 } } }
     ];
+    orders.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.orderList = async (req, res) => {
+    var page = req.query.page || 0;
+    var limit = req.query.limit || 10;
+    var skip = page * limit;
+    let projectQry = [
+        { $sort: { "_id": -1 } },
+        { $unwind: { "path": "$orderData", "preserveNullAndEmptyArrays": true } },
+        { $addFields: { "productId": "$orderData.productId" } },
+        { $unwind: { "path": "$productId", "preserveNullAndEmptyArrays": true } },
+        { $addFields: { "productId": { "$toObjectId": "$productId" } } },
+        { $addFields: { "customerId": { "$toObjectId": "$customerId" } } },
+        {
+            $lookup:
+            {
+                from: "productuploads",
+                localField: "productId",
+                foreignField: "_id",
+                as: "productDetails"
+            }
+        },
+        { $unwind: { "path": "$productDetails", "preserveNullAndEmptyArrays": true } },
+        {
+            $project: {
+                "productDetails.fulldescription": 0, "productDetails.shortdescription": 0, "productDetails.productimages": 0,
+                "productDetails.__v": 0
+            }
+        },
+        {
+            $lookup:
+            {
+                from: "users",
+                localField: "customerId",
+                foreignField: "_id",
+                as: "customerDetails"
+            }
+        },
+        { $unwind: { "path": "$customerDetails", "preserveNullAndEmptyArrays": true } },
+        {
+            $project: {
+                "customerDetails._class": 0, "customerDetails._id": 0, "customerDetails.password": 0,
+                "customerDetails.gender": 0
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                customerId: { $first: "$customerId" },
+                orderId: { $first: "$orderId" },
+                totalamount: { $first: "$totalamount" },
+                requestdate: { $first: "$requestdate" },
+                orderData: { $push: "$orderData" },
+                productDetails: { $push: "$productDetails" },
+                customerDetails: { $first: "$customerDetails" },
+            }
+        },
+        {
+            $facet: {
+                metadata: [{ $count: "total" }, { $addFields: { page: parseInt(page) } }],
+                data: [{ $skip: parseInt(skip) }, { $limit: parseInt(limit) }]
+            }
+        },
+    ];
+    if (req.query.email) {
+        projectQry.splice(10, 0, { $match: { "customerDetails.email": { $regex: req.query.email, $options: 'g' } } });
+    }
+    if (req.query.profilename) {
+        projectQry.splice(10, 0, { $match: { "customerDetails.profilename": { $regex: req.query.profilename, $options: 'g' } } });
+    }
+    if (req.query.title) {
+        projectQry.splice(10, 0, { $match: { "productDetails.title": { $regex: req.query.title, $options: 'g' } } });
+    }
+    if (req.query.category) {
+        projectQry.splice(10, 0, { $match: { "productDetails.category": { $regex: req.query.category, $options: 'g' } } });
+    }
+    if (req.query.modalno) {
+        projectQry.splice(10, 0, { $match: { "productDetails.modalno": { $regex: req.query.modalno, $options: 'g' } } });
+    }
     orders.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
             res.status(200).send(result);
