@@ -148,12 +148,14 @@ exports.dashboardCount = async (req, res) => {
 
 exports.orderStatistics = async (req, res) => {
     var currentMonth = moment(new Date()).format('YYYY-MM-DD[T00:00:00.000Z]');
-    var d = moment(currentMonth).add(-1, 'month')
+    var d = moment(currentMonth).add(-1, 'year')
     var previousMonth = moment(d).format('YYYY-MM-DD[T00:00:00.000Z]');
     var projectQry = [
-        { $project: { _id: 0 } },
+        { $project: { _id: 0, month: { $month: { $toDate: "$requestdate" } }, requestdate: "$requestdate" } },
         { $match: { "requestdate": { $gte: new Date(previousMonth), $lte: new Date(currentMonth) } } },
-        { $group: { _id: "$requestdate", myCount: { $sum: 1 } } }
+       
+        { $group: { _id: "$month", requestdate: { "$first": "$requestdate" }, myCount: { $sum: 1 } } },
+        { $sort: { "requestdate": 1 }}
     ];
     orders.aggregate(projectQry).then((result, err) => {
         if (Array.isArray(result) && result.length > 0) {
