@@ -21,6 +21,7 @@ var orders = require('../models/placeorder');
 var customerReview = require('../models/customerreview');
 var categorytype = require('../models/category');
 var brands = require('../models/brands');
+var cities = require('../models/cities');
 
 var gfs;
 mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -650,4 +651,36 @@ exports.orderList = async (req, res) => {
             res.status(400).send("No data found");
         }
     })
+}
+
+exports.stateList = async (req, res) => {
+    var projectQry = [
+        { $project: { _id: 0, id:1, state: 1 } }
+    ];
+    cities.aggregate(projectQry).then((result, err) => {
+        if (Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).send("No data found");
+        }
+    })
+}
+
+exports.cityList = async (req, res) => {
+    if (req.query.state) {
+        var projectQry = [
+            { $match: { "state": req.query.state } },
+            { $project: { _id: 0, id: 1, city: "$name" } },
+           
+        ];
+        cities.aggregate(projectQry).then((result, err) => {
+            if (Array.isArray(result) && result.length > 0) {
+                res.status(200).send(result);
+            } else {
+                res.status(400).send({ "message": "No data found" });
+            }
+        })
+    } else {
+        res.status(400).send({ "message": "Please provide payload" });
+    }
 }

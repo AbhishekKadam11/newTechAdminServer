@@ -22,5 +22,7 @@ router.put('/productUpdate', controller.productUpdate);
 router.put('/customerUpdate', controller.customerUpdate);
 router.get('/orderCountByCustomer', controller.orderCountByCustomer);
 router.get('/orderList', controller.orderList);
+router.get('/stateList', controller.stateList);
+router.get('/cityList', controller.cityList);
 
 module.exports = router;
