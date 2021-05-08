@@ -24,5 +24,6 @@ router.get('/orderCountByCustomer', controller.orderCountByCustomer);
 router.get('/orderList', controller.orderList);
 router.get('/stateList', controller.stateList);
 router.get('/cityList', controller.cityList);
+router.get('/stateWiseCount', controller.stateWiseCount);
 
 module.exports = router;

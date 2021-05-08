@@ -77,7 +77,7 @@ exports.login = async (req, res) => {
                     var token = jwt.sign({ id: user._id }, config.secret, {
                         expiresIn: 86400 // expires in 24 hours
                     });
-                    res.send({ success: true, token: token, email: req.body.email });
+                    res.send({ success: true, token: token, email: req.body.email, role: user['role'] });
                 } else {
                     res.send({ success: false, msg: 'Authentication failed. Wrong password.' });
                 }
@@ -682,5 +682,24 @@ exports.cityList = async (req, res) => {
         })
     } else {
         res.status(400).send({ "message": "Please provide payload" });
+    }
+}
+
+exports.stateWiseCount = async (req, res) => {
+    if (req.query.state) {
+        var projectQry = [
+            { $project: { _id: 0 } },
+            { $match: { "state": req.query.state } },
+            { $group: { _id: "$city", myCount: { $sum: 1 } } }
+        ];
+        customer.aggregate(projectQry).then((result, err) => {
+            if (Array.isArray(result) && result.length > 0) {
+                res.status(200).send(result);
+            } else {
+                res.status(400).send({"message": "No data found" });
+            }
+        })
+    } else {
+        res.status(400).send({"message": "Please provide payload" });
     }
 }

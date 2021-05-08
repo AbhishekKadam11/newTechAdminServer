@@ -38,10 +38,10 @@ var UserSchema = new Schema({
   address: {
     type: String
   },
-  city_id: {
+  city: {
     type: String
   },
-  state_id: {
+  state: {
     type: String
   },
   extraaddon: {

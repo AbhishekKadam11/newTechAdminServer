@@ -24,6 +24,9 @@ var UserSchema = new Schema({
   },
   mobileNo: {
     type: String
+  },
+  role: {
+    type: String
   }
 },{ versionKey: false
 });
