@@ -11,7 +11,6 @@ const Gridfs = require('multer-gridfs-storage');
 const bodyparser = require('body-parser');
 const Grid = require('gridfs-stream');
 const crypto = require('crypto');
-// const main = require('../index.js')
 
 var config = require('../config/database');
 var User = require('../models/user');
@@ -441,16 +440,28 @@ exports.productUpload = async (req, res) => {
     GET: Fetches a particular image and render on browser
 */
 exports.getFile = async (req, res) => {
-    // console.log(gfs)
-    gfs.exist({ filename: req.query.filename }, function (err, file) {
-        if (err || !file) {
-            res.send('File Not Found');
-        } else {
-            gfs.createReadStream(req.query.filename).pipe(res);
-        }
-    });
+    try {
+        gfs.exist({ filename: req.query.filename }, function (err, file) {
+            if (err || !file) {
+                res.send('File Not Found');
+            } else {
+                // gfs.createReadStream(req.query.filename).pipe(res);
+                var buffer = [], base64Data;
+                var readstream = gfs.createReadStream(req.query.filename);
+                readstream.on('data', function (chunk) {
+                    buffer.push(chunk);
+                });
+                readstream.on('end', function () {
+                    const fbuf = Buffer.concat(buffer);
+                    base64Data = fbuf.toString('base64');
+                    res.status(200).json(base64Data);
+                });
+            }
+        });
+    } catch (e) {
+        res.status(400).send(e);
+    }
 }
-
 
 exports.customerbuyProduct = async (req, res) => {
     var productId = req.query.productId;
