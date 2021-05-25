@@ -441,7 +441,7 @@ exports.productUpload = async (req, res) => {
 */
 exports.getFile = async (req, res) => {
     try {
-        gfs.exist({ filename: req.query.filename }, function (err, file) {
+        gfs.exist({ filename: unescape(req.query.filename) }, function (err, file) {
             if (err || !file) {
                 res.send('File Not Found');
             } else {
