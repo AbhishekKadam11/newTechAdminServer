@@ -14,7 +14,7 @@ const cors = require('cors');
 
 app.use(cors());
 app.use(bodyParser.json());
-// app.use('/.netlify/functions/index', routes);  
+// app.use('/.netlify/functions/index', routes); 
 app.use('/', routes);
 
 var server_port = process.env.PORT || 8080;
