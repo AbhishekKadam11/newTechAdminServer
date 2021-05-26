@@ -2,6 +2,8 @@ FROM node:13-alpine
 
 RUN mkdir -p /usr/src/app
 
+# Install app dependencies
+COPY package.json /usr/src/app/
 WORKDIR /usr/src/app
 
 COPY . .
