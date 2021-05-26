@@ -447,17 +447,17 @@ exports.getFile = async (req, res) => {
                 res.send('File Not Found');
             } else {
                 console.log("file", req.query.filename + "found " + file)
-                gfs.createReadStream(req.query.filename).pipe(res);
-                // var buffer = [], base64Data;
-                // var readstream = gfs.createReadStream(req.query.filename);
-                // readstream.on('data', function (chunk) {
-                //     buffer.push(chunk);
-                // });
-                // readstream.on('end', function () {
-                //     const fbuf = Buffer.concat(buffer);
-                //     base64Data = fbuf.toString('base64');
-                //     res.status(200).json(base64Data);
-                // });
+                // gfs.createReadStream(req.query.filename).pipe(res);
+                var buffer = [], base64Data;
+                var readstream = gfs.createReadStream(req.query.filename);
+                readstream.on('data', function (chunk) {
+                    buffer.push(chunk);
+                });
+                readstream.on('end', function () {
+                    const fbuf = Buffer.concat(buffer);
+                    base64Data = fbuf.toString('base64');
+                    res.status(200).json(base64Data);
+                });
             }
         });
     } catch (e) {
