@@ -1,17 +1,11 @@
-FROM node:10-newtechAdminServer
+FROM node:13-alpine
 
-RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
+RUN mkdir -p /usr/src/app
 
-WORKDIR /home/node/app
+WORKDIR /usr/src/app
 
-COPY package*.json ./
-
-USER node
-
+COPY . .
 RUN npm install
 
-COPY --chown=node:node . .
-
-EXPOSE 8080
-
-CMD [ "node", "src/index.js" ]
+EXPOSE 3000
+CMD node ./bin/www
