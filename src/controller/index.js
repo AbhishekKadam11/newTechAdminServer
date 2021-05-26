@@ -23,7 +23,7 @@ var brands = require('../models/brands');
 var cities = require('../models/cities');
 
 var gfs;
-mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(config.database, { useNewUrlParser: true });
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback() {
