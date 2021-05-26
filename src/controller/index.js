@@ -443,19 +443,21 @@ exports.getFile = async (req, res) => {
     try {
         gfs.exist({ filename: unescape(req.query.filename) }, function (err, file) {
             if (err || !file) {
+                console.log("file", req.query.filename + "not found " + file)
                 res.send('File Not Found');
             } else {
-                // gfs.createReadStream(req.query.filename).pipe(res);
-                var buffer = [], base64Data;
-                var readstream = gfs.createReadStream(req.query.filename);
-                readstream.on('data', function (chunk) {
-                    buffer.push(chunk);
-                });
-                readstream.on('end', function () {
-                    const fbuf = Buffer.concat(buffer);
-                    base64Data = fbuf.toString('base64');
-                    res.status(200).json(base64Data);
-                });
+                console.log("file", req.query.filename + "found " + file)
+                gfs.createReadStream(req.query.filename).pipe(res);
+                // var buffer = [], base64Data;
+                // var readstream = gfs.createReadStream(req.query.filename);
+                // readstream.on('data', function (chunk) {
+                //     buffer.push(chunk);
+                // });
+                // readstream.on('end', function () {
+                //     const fbuf = Buffer.concat(buffer);
+                //     base64Data = fbuf.toString('base64');
+                //     res.status(200).json(base64Data);
+                // });
             }
         });
     } catch (e) {
