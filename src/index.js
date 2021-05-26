@@ -34,4 +34,5 @@ var allowCrossDomain = function (req, res, next) {
 };
 app.use(allowCrossDomain);
  
-module.exports.handler = serverless(app);
+// module.exports.handler = serverless(app);
+module.exports = app;
