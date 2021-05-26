@@ -1,0 +1,15 @@
+---
+application:
+  name: "newtechadminserver"
+  project: "newTechAdminServer"
+  organization: "QoveryCommunity"
+databases:
+- type: "MONGODB"
+  name: "newtech"
+  version: "4.4"
+routers:
+- name: "main-newtechadminserver"
+  routes:
+  - application_name: "newtechadminserver"
+    paths:
+    - "/*"
